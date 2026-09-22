@@ -1,5 +1,38 @@
 # kuaidui-books
 
+## v0.2.0：交互登录与异步入口
+
+```bash
+python -m pip install .
+kuaidui login
+kuaidui status
+kuaidui book YOUR_BOOK_ID
+kuaidui logout
+```
+
+```python
+import asyncio
+from kuaidui import BookClient
+
+async def main():
+    client = BookClient(session='~/.config/kuaidui/session.json')
+    await client.start()  # 有效会话复用，否则终端提示手机号及验证码
+    book = await client.get_book('YOUR_BOOK_ID')
+    for page in book.get('answerList', []):
+        print(page['origin'])
+
+asyncio.run(main())
+```
+
+验证码用 getpass 输入，不回显、不保存；凭证原子写入、权限 0600。默认不自动重发短信，输入 r 后还需 yes 确认。服务器任务使用 `await client.start(interactive=False)`；没有有效登录态时抛出 LoginRequired。网络错误、图形验证、验证码错误不会被当作登录成功。明确的接口错误保留为异常，不盲目触发重新登录。
+
+`kuaidui --session /secure/path/session.json status` 可指定文件。logout 只删除本地文件。旧同步 API 改名为 `SyncBookClient`，或继续从 `kuaidui.books` 导入旧类。
+
+现已附带从 APK 提取的**公开应用常量及公开签名证书** app_profile.json，用于首次初始化；它们不是用户凭证或私钥。新生成的 CUID、初始化 token 和 KDUSS 仅保存在用户本地。CLI 当前支持中国大陆手机号（11位或 +86）。
+
+验证：离线模拟交互流程检查通过；独立虚拟环境安装与 CLI status 通过；现有真实会话经异步 start→get_book 返回 161 条资源。本次没有再次向用户发送短信，完整交互分支使用模拟认证验证，SMS HTTP 协议此前已真实登录验证。
+
+
 快对 Android 6.98.0 书籍详情与答案图片资源接口的 Python 重实现。目标是**书籍答案**，不是拍照单题检索。
 
 运行时仅使用 Python 标准库，不加载 ARM `.so`，不使用模拟器、Frida、Unidbg 或远程签名服务。仓库不包含 APK、反编译代码、账号、手机号、验证码、登录态、真实设备标识或书籍答案图片。
@@ -9,8 +42,8 @@
 - 已在维护者私有环境完成：服务端初始化、合法短信登录后的书籍查询、响应解密、读取 `answerList`。
 - 一个书籍样本返回 161 个不重复原图 URL，全部下载并通过图片完整性及尺寸校验。
 - `answerListTotal` 在该样本为 0，不能拿它替代真实数组长度；161 是返回资源数，不是经纸质目录确认的完整书籍页数。
-- 服务端实现、账号权限和验证要求可能变化。当前未实现交互验证码、购买、付费权限获取、会话自动刷新。
-- SMS 登录交互脚本、实际测试记录和用户会话**没有发布**。本版本的高层入口需要调用者自己的已初始化会话；不是无需配置的一键登录工具。
+- 服务端实现、账号权限和验证要求可能变化。当前未实现图形验证码、购买、付费权限获取、会话自动刷新。
+- 已发布交互登录 CLI；实际测试记录和用户会话不发布。首次使用需要用户交互接收验证码。
 
 ## 安装
 
@@ -21,10 +54,10 @@ python -m pip install .
 ## 获取书籍答案列表
 
 ```python
-from kuaidui import BookClient
+from kuaidui import SyncBookClient
 
 # 文件必须位于仓库外，使用自己的合法会话；不要提交到 Git。
-client = BookClient.from_session_file('/secure/path/session.json')
+client = SyncBookClient.from_session_file('/secure/path/session.json')
 book = client.get_book('YOUR_32_CHARACTER_BOOK_ID')
 print(book['name'])
 for index, resource in enumerate(book.get('answerList', []), 1):
@@ -46,7 +79,7 @@ for index, resource in enumerate(book.get('answerList', []), 1):
 
 `abis` 是是否支持 ARM64 的 **0/1 标志**，不是 `armeabi-v7a` 字符串。`appBit` 为进程位数，例如 `32`。公共参数不要凭字段名猜值。
 
-低层模块包括初始化加密与校验 (`bootstrap_native`)、正常初始化 HTTP 交换 (`bootstrap`)、签名与密钥派生 (`native`)。它们需要调用者提供正确的 CUID 和实际 APK 签名证书 DER 的十六进制字符串；仓库不打包证书或会话。设备/账号条件不足时应返回错误，不制造通过状态。
+低层模块包括初始化加密与校验 (`bootstrap_native`)、正常初始化 HTTP 交换 (`bootstrap`)、签名与密钥派生 (`native`)。它们需要调用者提供正确的 CUID 和实际 APK 签名证书 DER 的十六进制字符串；仓库仅打包公开应用证书，不打包用户会话。设备/账号条件不足时应返回错误，不制造通过状态。
 
 ## 技术原理
 
