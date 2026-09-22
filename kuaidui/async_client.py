@@ -37,6 +37,11 @@ class BookClient:
             self._session=state
             return self
 
+    async def export_pdf(self, value, output, **kwargs):
+        from .pdf_export import export_book_pdf
+        book = await self.get_book(value, **kwargs)
+        return await asyncio.to_thread(export_book_pdf, book, output)
+
     async def status(self):
         if not self.path.exists():return False
         state=json.loads(self.path.read_text())

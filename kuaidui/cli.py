@@ -14,6 +14,9 @@ async def run(args):
         valid=await client.status(); print('有效' if valid else '未登录或已失效');return 0 if valid else 1
     elif args.command=='logout':
         await client.logout();print('本地凭证已删除（非服务端注销）。')
+    elif args.command=='pdf':
+        await client.start(interactive=False)
+        print(json.dumps(await client.export_pdf(args.book,args.output),ensure_ascii=False))
     elif args.command=='book':
         await client.start(interactive=False)
         print(json.dumps(await client.get_book(args.book),ensure_ascii=False,indent=2))
@@ -25,6 +28,9 @@ def main():
     sub=parser.add_subparsers(dest='command',required=True)
     for name in ('login','status','logout'):sub.add_parser(name)
     sub.add_parser('book').add_argument('book')
+    pdf=sub.add_parser('pdf')
+    pdf.add_argument('book')
+    pdf.add_argument('-o','--output',required=True)
     args=parser.parse_args()
     try:return asyncio.run(run(args))
     except (LoginRequired,SearchError):

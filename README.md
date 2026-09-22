@@ -1,5 +1,32 @@
 # kuaidui-books
 
+## v0.3.0：导出 PDF
+
+```bash
+pip install -U "kuaidui-books[pdf] @ git+https://github.com/preauthn1/kuaidui-books.git"
+kuaidui login
+kuaidui pdf YOUR_BOOK_ID -o answers.pdf
+```
+
+异步调用：
+
+```python
+await client.start()
+result = await client.export_pdf('YOUR_BOOK_ID', 'answers.pdf')
+print(result['pages'], result['path'])
+```
+
+本地已有图片可用 `from kuaidui.pdf_export import images_to_pdf`，然后 `images_to_pdf(有序图片路径列表, 'answers.pdf')`，无需登录或联网。
+
+- 按 answerList 的原始顺序，一图一页，保持原图比例，JPEG 不重新压缩。
+- 这是图片型 PDF，不含 OCR 可搜索文本。
+- 任一图片失败、损坏或尺寸不符即停止，不发布缺页 PDF；已有输出文件不覆盖。
+- 临时图片自动清理；CDN 下载不发送登录 Cookie，只接受代码白名单中的 HTTPS 原图域名，不跟随重定向。
+- 每张限 25 MB、累计限 1 GB，顺序下载，每次请求有超时。
+- PDF 是可选依赖：img2pdf 与 Pillow；基础接口仍不需要 ARM 或模拟器。
+- 验证：161 张本地原图生成 161 页，逐页嵌入的 JPEG 字节与源文件完全一致、顺序一致；另实测一张 CDN 下载→PDF 路径。
+
+
 ## v0.2.0：交互登录与异步入口
 
 ```bash

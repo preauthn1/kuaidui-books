@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kuaidui-books"
-version = "0.2.0"
+version = "0.3.0"
 description = "Pure Python book metadata and answer resource protocol client"
 requires-python = ">=3.10"
 
@@ -13,6 +13,9 @@ packages = ["kuaidui"]
 
 [tool.setuptools.package-data]
 kuaidui = ["des_tables.json", "app_profile.json"]
+
+[project.optional-dependencies]
+pdf = ["img2pdf>=0.5.1", "Pillow>=10"]
 
 [project.scripts]
 kuaidui = "kuaidui.cli:main"
