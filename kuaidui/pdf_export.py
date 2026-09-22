@@ -45,6 +45,9 @@ def export_book_pdf(book, output, *, timeout=45):
         raise ValueError('Book requires login or verification')
     rows=book.get('answerList')
     if not isinstance(rows,list) or not rows:raise ValueError('No answer images returned')
+    # Fixed book-export rule: first resource is excluded, not content detection.
+    rows=rows[1:]
+    if not rows:raise ValueError('No answer images remain after skipping first resource')
     if Path(output).expanduser().exists():raise FileExistsError('Output already exists')
     # Fail before downloading if optional dependency is missing.
     try:
