@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+build/
+dist/
+*.egg-info/
+private/
+data/
+.env*
+*session*.json
+*credentials*
+*.apk
+*.dex
+*.so
+*.jpg
+*.png
+*.zip
